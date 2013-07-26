@@ -13,7 +13,7 @@ if ($@) {
 
 our %SPEC;
 
-$SPEC{generate_fdoc} = {
+$SPEC{gen_doc} = {
     v => 1.1,
     args => {
         url => {
@@ -28,7 +28,7 @@ $SPEC{generate_fdoc} = {
         },
     },
 };
-sub generate_fdoc {
+sub gen_doc {
     require File::Which;
 
     my %args = @_;
@@ -45,14 +45,14 @@ sub generate_fdoc {
     if ($format eq 'man') {
         require Perinci::Sub::To::POD;
         $doc = Perinci::Sub::To::POD->new(url=>$url);
-        $res = $doc->generate_doc;
+        $res = $doc->gen_doc;
         [200, "OK", $res, {
             "cmdline.page_result"=>1,
             "cmdline.pager"=>"pod2man | man -l -"}];
     } else {
         require Perinci::Sub::To::Text;
         $doc = Perinci::Sub::To::Text->new(url=>$url);
-        $res = $doc->generate_doc;
+        $res = $doc->gen_doc;
         [200, "OK", $res, {"cmdline.page_result"=>1}];
     }
 
