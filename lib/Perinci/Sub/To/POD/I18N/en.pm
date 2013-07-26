@@ -1,5 +1,5 @@
-package Perinci::To::POD::I18N::en;
-use parent qw(Perinci::To::POD::I18N Perinci::To::PackageBase::I18N::en);
+package Perinci::Sub::To::POD::I18N::en;
+use parent qw(Perinci::Sub::To::POD::I18N Perinci::Sub::To::FuncBase::I18N::en);
 
 use Locale::Maketext::Lexicon::Gettext;
 our %Lexicon = %{ Locale::Maketext::Lexicon::Gettext->parse(<DATA>) };
@@ -9,7 +9,7 @@ our %Lexicon = %{ Locale::Maketext::Lexicon::Gettext->parse(<DATA>) };
 #use Data::Dump; dd \%Lexicon;
 
 1;
-# ABSTRACT: English translation for Perinci::To::POD
+# ABSTRACT: English translation for Perinci::Sub::To::POD
 __DATA__
 
 msgid  "This module has L<Rinci> metadata"

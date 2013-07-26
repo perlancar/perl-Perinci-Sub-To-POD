@@ -1,10 +1,10 @@
-package Perinci::To::POD;
+package Perinci::Sub::To::POD;
 
 use 5.010001;
 use Log::Any '$log';
 use Moo;
 
-extends 'Perinci::To::PackageBase';
+extends 'Perinci::Sub::To::FuncBase';
 
 # VERSION
 
@@ -20,73 +20,28 @@ sub _md2pod {
     $m2p->markdown_to_pod(markdown => $md);
 }
 
-sub doc_gen_summary {
+# because we need stuffs in parent's gen_doc_section_arguments() even to print
+# the name, we'll just do everything in after_gen_doc().
+sub after_gen_doc {
     my ($self) = @_;
 
-    my $name_summary = join(
-        "",
-        $self->doc_parse->{name} // "",
-        ($self->doc_parse->{name} && $self->doc_parse->{summary} ? ' - ' : ''),
-        $self->doc_parse->{summary} // ""
-    );
+    my $res   = $self->{_res};
+    my $meta  = $self->{_meta};
+    my $ometa = $self->{_orig_meta};
+
+    my $has_args = !!keys(%{$res->{args}});
 
     $self->add_doc_lines(
-        "=head1 " . uc($self->loc("Name")),
-        "",
-        $name_summary,
-        "",
-    );
-}
-
-sub doc_gen_version {
-    my ($self) = @_;
-
-    $self->add_doc_lines(
-        "=head1 " . uc($self->loc("Version")),
-        "",
-        $self->{_meta}{entity_version} // '?',
-        "",
-    );
-}
-
-sub doc_gen_description {
-    my ($self) = @_;
-
-    $self->add_doc_lines(
-        "=head1 " . uc($self->loc("Description")),
-        ""
-    );
-
-    if ($self->doc_parse->{description}) {
-        $self->add_doc_lines(
-            $self->_md2pod($self->doc_parse->{description}),
-            "",
-        );
-    }
-
-    #$self->add_doc_lines(
-    #    $self->loc("This module has L<Rinci> metadata") . ".",
-    #    "",
-    #);
-}
-
-sub _fdoc_gen {
-    my ($self, $url) = @_;
-    my $p = $self->doc_parse->{functions}{$url};
-
-    my $has_args = !!keys(%{$p->{args}});
-
-    $self->add_doc_lines(
-        "=head2 " . $p->{name} .
-            ($has_args ? $p->{perl_args} : "()"). ' -> ' . $p->{human_ret},
+        "=head2 " . $res->{name} .
+            ($has_args ? $res->{args_plterm} : "()").' -> '.$res->{human_ret},
         "");
 
-    $self->add_doc_lines($p->{summary} . ($p->{summary} =~ /\.$/ ? "":"."), "")
-        if $p->{summary};
-    $self->add_doc_lines($self->_md2pod($p->{description}), "")
-        if $p->{description};
+    $self->add_doc_lines($res->{summary}.($res->{summary} =~ /\.$/ ? "":"."), "")
+        if $res->{summary};
+    $self->add_doc_lines($self->_md2pod($res->{description}), "")
+        if $res->{description};
 
-    my $feat = $p->{meta}{features} // {};
+    my $feat = $meta->{features} // {};
     my @ft;
     my %spargs;
     if ($feat->{reverse}) {
@@ -96,6 +51,7 @@ sub _fdoc_gen {
             summary => $self->loc("Pass -reverse=>1 to reverse operation."),
         };
     }
+    # undo is deprecated now in Rinci 1.1.24+, but we still support it
     if ($feat->{undo}) {
         push @ft, $self->loc("This function supports undo operation.");
         $spargs{-undo_action} = {
@@ -154,23 +110,23 @@ sub _fdoc_gen {
             "=over 4",
             "",
         );
-        for my $name (sort keys %{$p->{args}}) {
-            my $pa = $p->{args}{$name};
+        for my $name (sort keys %{$res->{args}}) {
+            my $ra = $res->{args}{$name};
             $self->add_doc_lines(join(
                 "",
                 "=item * B<", $name, ">",
-                ($pa->{req} ? '*' : ''), ' => ',
-                "I<", $pa->{human_arg}, ">",
-                (defined($pa->{human_arg_default}) ?
+                ($ra->{arg}{req} ? '*' : ''), ' => ',
+                "I<", $ra->{human_arg}, ">",
+                (defined($ra->{human_arg_default}) ?
                      " (" . $self->loc("default") .
-                         ": $pa->{human_arg_default})" : "")
+                         ": $ra->{human_arg_default})" : "")
             ), "");
             $self->add_doc_lines(
-                $pa->{summary} . ($pa->{summary} =~ /\.$/ ? "" : "."),
-                "") if $pa->{summary};
+                $ra->{summary} . ($ra->{summary} =~ /\.$/ ? "" : "."),
+                "") if $ra->{summary};
             $self->add_doc_lines(
-                $self->_md2pod($pa->{description}),
-                "") if $pa->{description};
+                $self->_md2pod($ra->{description}),
+                "") if $ra->{description};
         }
         $self->add_doc_lines("=back", "");
     } else {
@@ -203,7 +159,7 @@ sub _fdoc_gen {
     }
 
     $self->add_doc_lines($self->loc("Return value") . ':', "");
-    my $rn = $p->{orig_meta}{result_naked} // $p->{meta}{result_naked};
+    my $rn = $ometa->{result_naked} // $meta->{result_naked};
     $self->add_doc_lines($self->_md2pod($self->loc(join(
         "",
         "Returns an enveloped result (an array). ",
@@ -218,53 +174,24 @@ sub _fdoc_gen {
     # XXX result summary
 
     # XXX result description
-
-    # test
-    #$self->add_doc_lines({wrap=>0}, "Line 1\nLine 2\n");
-}
-
-sub doc_gen_functions {
-    my ($self) = @_;
-    my $pff = $self->doc_parse->{functions};
-
-    $self->add_doc_lines(
-        "=head1 " . uc($self->loc("Functions")),
-        "",
-    );
-
-    # temporary, since we don't parse export information yet (and
-    # Perinci::Exporter is not yet written anyway)
-    $self->add_doc_lines(
-        $self->loc("None are exported by default, but they are exportable."),
-        "",
-    );
-
-    # XXX if module uses Perinci::Exporter, show a basic usage for importing
-
-    # XXX categorize functions based on tags
-    for my $url (sort keys %$pff) {
-        my $p = $pff->{$url};
-        $self->_fdoc_gen($url);
-    }
-
 }
 
 1;
-# ABSTRACT: Generate POD documentation from Rinci package metadata
+# ABSTRACT: Generate POD documentation from Rinci function metadata
 
 =for Pod::Coverage .+
 
 =head1 SYNOPSIS
 
-You can use the included L<peri-pod> script, or:
+You can use the included L<peri-func-doc> script, or:
 
- use Perinci::To::POD;
+ use Perinci::Sub::To::POD;
+ my $doc = Perinci::Sub::To::POD->new(url => "/Some/Module/somefunc");
+ say $doc->gen_doc;
 
- # to generate POD for the whole module
- my $doc = Perinci::To::POD->new(url => "/Some/Module/");
- say $doc->generate_doc;
 
- # to generate POD for a certain function only, currently you can parse/cut the
- # whole module POD by yourself.
+=head1 SEE ALSO
+
+L<Perinci::To::POD> to generate POD documentation for the whole package.
 
 =cut

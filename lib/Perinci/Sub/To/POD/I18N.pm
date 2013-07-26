@@ -1,8 +1,8 @@
-package Perinci::To::POD::I18N;
+package Perinci::Sub::To::POD::I18N;
 
-use base 'Perinci::To::PackageBase::I18N';
+use base 'Perinci::Sub::To::FuncBase::I18N';
 
 # VERSION
 
 1;
-# ABSTRACT: Project class for Perinci::To::POD
+# ABSTRACT: Project class for Perinci::Sub::To::POD
