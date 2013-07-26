@@ -60,7 +60,7 @@ sub gen_doc {
 
 $ENV{LOG} //= 0; # speed up startup, but allow overriding
 my $cmd = Perinci::CmdLine->new(
-    url => '/main/generate_fdoc',
+    url => '/main/gen_doc',
 );
 delete $cmd->common_opts->{format};
 delete $cmd->common_opts->{format_options};
