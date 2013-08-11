@@ -25,9 +25,9 @@ sub _md2pod {
 sub after_gen_doc {
     my ($self) = @_;
 
-    my $res   = $self->{_res};
-    my $meta  = $self->{_meta};
-    my $ometa = $self->{_orig_meta};
+    my $res   = $self->{_doc_res};
+    my $meta  = $self->{_doc_meta};
+    my $ometa = $self->{_doc_orig_meta};
 
     my $has_args = !!keys(%{$res->{args}});
 
