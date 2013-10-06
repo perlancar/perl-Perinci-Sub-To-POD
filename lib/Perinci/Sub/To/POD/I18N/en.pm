@@ -20,6 +20,9 @@ msgstr "No arguments"
 
 # function
 
+msgid  "Examples"
+msgstr "Examples"
+
 msgid  "None are exported by default, but they are exportable."
 msgstr "None are exported by default, but they are exportable."
 
