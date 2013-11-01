@@ -25,19 +25,19 @@ sub _md2pod {
 sub after_gen_doc {
     my ($self) = @_;
 
-    my $res   = $self->{_doc_res};
-    my $meta  = $self->{_doc_meta};
-    my $ometa = $self->{_doc_orig_meta};
+    my $meta  = $self->meta;
+    my $dres  = $self->{_doc_res};
 
-    my $has_args = !!keys(%{$res->{args}});
+    my $has_args = !!keys(%{$dres->{args}});
 
     $self->add_doc_lines(
-        "=head2 " . $res->{name} .
-            ($has_args ? $res->{args_plterm} : "()").' -> '.$res->{human_ret},
+        "=head2 " . $dres->{name} .
+            ($has_args ? $dres->{args_plterm} : "()").' -> '.$dres->{human_ret},
         "");
 
-    $self->add_doc_lines($res->{summary}.($res->{summary} =~ /\.$/ ? "":"."), "")
-        if $res->{summary};
+    $self->add_doc_lines(
+        $dres->{summary}.($dres->{summary} =~ /\.$/ ? "":"."), "")
+        if $dres->{summary};
 
     my $examples = $meta->{examples};
     if ($examples && @$examples) {
@@ -53,7 +53,7 @@ sub after_gen_doc {
                 my $gares = Perinci::Sub::GetArgs::Argv::get_args_from_argv(
                     argv => $eg->{argv}, meta => $meta);
                 die "Can't convert argv to argv in example #$i ".
-                    "of function $res->{name}): $gares->[0] - $gares->[1]"
+                    "of function $dres->{name}): $gares->[0] - $gares->[1]"
                         unless $gares->[0] == 200;
                 $args = $gares->[2];
             } else {
@@ -63,7 +63,7 @@ sub after_gen_doc {
             require Data::Dump;
             my $argsdump = Data::Dump::dump($args);
             $argsdump =~ s/^\{\s*//; $argsdump =~ s/\s*\}\n?$//;
-            my $out = "$res->{name}($argsdump);";
+            my $out = "$dres->{name}($argsdump);";
             my $resdump;
             if (exists $eg->{result}) {
                 $resdump = Data::Dump::dump($eg->{result});
@@ -95,8 +95,8 @@ sub after_gen_doc {
         }
     }
 
-    $self->add_doc_lines($self->_md2pod($res->{description}), "")
-        if $res->{description};
+    $self->add_doc_lines($self->_md2pod($dres->{description}), "")
+        if $dres->{description};
 
     my $feat = $meta->{features} // {};
     my @ft;
@@ -167,8 +167,8 @@ sub after_gen_doc {
             "=over 4",
             "",
         );
-        for my $name (sort keys %{$res->{args}}) {
-            my $ra = $res->{args}{$name};
+        for my $name (sort keys %{$dres->{args}}) {
+            my $ra = $dres->{args}{$name};
             $self->add_doc_lines(join(
                 "",
                 "=item * B<", $name, ">",
@@ -216,7 +216,7 @@ sub after_gen_doc {
     }
 
     $self->add_doc_lines($self->loc("Return value") . ':', "");
-    my $rn = $ometa->{result_naked} // $meta->{result_naked};
+    my $rn = $meta->{result_naked};
     $self->add_doc_lines($self->_md2pod($self->loc(join(
         "",
         "Returns an enveloped result (an array). ",

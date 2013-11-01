@@ -4,6 +4,8 @@ use 5.010;
 use strict;
 use warnings;
 
+use Perinci::Sub::Util qw(err);
+
 # VERSION
 
 eval { require Perinci::CmdLine };
@@ -30,11 +32,15 @@ $SPEC{gen_doc} = {
 };
 sub gen_doc {
     require File::Which;
+    require Perinci::Access;
+
+    state $pa = Perinci::Access->new;
 
     my %args = @_;
     # XXX schema
     my $url = $args{url} or return [400, "Please specify url"];
     $url = "pl:$url" if $url =~ m!^/!;
+    my $fname = $url; $fname =~ s!.+/!!;
 
     my $format = $args{format} // "man";
     $format = "text" unless
@@ -42,17 +48,21 @@ sub gen_doc {
 
     # XXX check if url is a module or function or ...
 
-    my ($doc, $res);
+    my $res = $pa->request(meta => $url);
+    return err($res) unless $res->[0] == 200;
+    my $meta = $res->[2];
+
+    my $doc;
     if ($format eq 'man') {
         require Perinci::Sub::To::POD;
-        $doc = Perinci::Sub::To::POD->new(url=>$url);
+        $doc = Perinci::Sub::To::POD->new(meta=>$meta, name=>$fname);
         $res = $doc->gen_doc;
         [200, "OK", $res, {
             "cmdline.page_result"=>1,
             "cmdline.pager"=>"pod2man | man -l -"}];
     } else {
         require Perinci::Sub::To::Text;
-        $doc = Perinci::Sub::To::Text->new(url=>$url);
+        $doc = Perinci::Sub::To::Text->new(meta=>$meta, name=>$fname);
         $res = $doc->gen_doc;
         [200, "OK", $res, {"cmdline.page_result"=>1}];
     }
