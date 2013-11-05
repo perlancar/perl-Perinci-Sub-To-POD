@@ -51,6 +51,12 @@ sub gen_doc {
     my $res = $pa->request(meta => $url);
     return err($res) unless $res->[0] == 200;
     my $meta = $res->[2];
+    my $ometa = $res->[3]{orig_meta} // {};
+    # we want to document the original args_as & result_naked, not the
+    # wrapped-over-riap one
+    for (qw/args_as result_naked/) {
+        $meta->{$_} = $ometa->{$_} if defined $ometa->{$_};
+    }
 
     my $doc;
     if ($format eq 'man') {
