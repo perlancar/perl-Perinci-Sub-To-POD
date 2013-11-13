@@ -23,9 +23,6 @@ msgstr "No arguments"
 msgid  "Examples"
 msgstr "Examples"
 
-msgid  "None are exported by default, but they are exportable."
-msgstr "None are exported by default, but they are exportable."
-
 # function's special arguments
 
 msgid  "Pass -reverse=>1 to reverse operation."
